@@ -17,21 +17,8 @@
                 canvasPixelData = imgd.data;
             });
 
-            $('#btn-start-render').click(async function() {
-                for (let i = 0; i < width * height; i++) {
-                    const result = await $.ajax({
-                        url: 'http://127.0.0.1:5000/',
-                        type: 'post',
-                        context: document.body,
-                        success: function(response) {
-                            pixels = getPixels(getCookie('pixels'));
-                            updateCanvas(pixels);
-                        },
-                        error: function(xhr) {
-                            console.log(xhr.status + ' ' + xhr.statusText);
-                        },
-                    });
-                }
+            $('#btn-start-render').click(function() {
+                getImage();
             });
 
             const getCookie = name => {
@@ -42,6 +29,23 @@
                         .pop()
                         .split(';')
                         .shift();
+            };
+            
+            const getImage = async function() {
+                for (let i = 0; i < width * height; i++) {
+                        const result = await $.ajax({
+                            url: 'http://127.0.0.1:5000/',
+                            type: 'post',
+                            context: document.body,
+                            success: function(response) {
+                                pixels = getPixels(getCookie('pixels'));
+                                updateCanvas(pixels);
+                            },
+                            error: function(xhr) {
+                                console.log(xhr.status + ' ' + xhr.statusText);
+                            },
+                        });
+                    }
             };
 
             // Parse the pixel cookie string into an object

@@ -44,18 +44,18 @@ def initiate_page():
     width_pixels = range(image_pixel_array.shape[0])
     height_pixels = range(image_pixel_array.shape[1])
 
-    progress_pixel_array = np.zeros([len(width_pixels),len(height_pixels)], dtype=int)
-    
+    # progress_pixel_array = np.zeros([len(width_pixels),len(height_pixels)], dtype=int)
+
     # unsent_pixels_index = list(itertools.product(width_pixels, height_pixels))
     # random.shuffle(unsent_pixels_index)
-    # for row in width_pixels:
-    #     random_pixel_row = list(itertools.product([row], height_pixels))
+    for row in width_pixels:
+        session['progress_row_'+str(row)] = np.zeros([len(height_pixels)], dtype=int)
     #     random.shuffle(random_pixel_row)
     #     session['row_'+str(row)] = random_pixel_row
     # session['unsent_pixels_index'] = unsent_pixels_index
-    
+
     session['current_row'] = 0
-    session['progress'] = progress_pixel_array
+    # session['progress'] = progress_pixel_array
     response = make_response(render_template('index.html'))
     response.set_cookie('image-width', str(len(width_pixels)))
     response.set_cookie('image-height', str(len(height_pixels)))
@@ -74,7 +74,7 @@ def get_pixel_string():
     image_width = int(request.cookies['image-width'])
     image_height = int(request.cookies['image-height'])
     pixel_row = session['current_row'] if session['current_row'] != image_width else 0
-    progress_row = session['progress'][pixel_row]
+    progress_row = session['progress_row_'+str(pixel_row)]
     image_pixel_array = np.array(Image.open(IMAGE_NAME))
     while len(pixel_string) < 75:
         pixel_col = random.randint(0, image_height) - 1
@@ -84,6 +84,8 @@ def get_pixel_string():
         pixel_rgb = image_pixel_array[pixel_row, pixel_col]
         pixel = f'{pixel_index}+{pixel_rgb[0]}/{pixel_rgb[1]}/{pixel_rgb[2]} '
         pixel_string = pixel_string + pixel
+        progress_row[pixel_col] = 1
+    session['progress_row_'+str(pixel_row)] = progress_row
     session['current_row'] = pixel_row + 1
     return pixel_string
 

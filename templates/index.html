@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    </head>
+    <body>
+        <p><button id="btn-start-render">Blastoff!</button></p>
+        <canvas id="canvas" width="500" height="500"></canvas>
+        <script>
+            const context = document.getElementById('canvas').getContext('2d');
+            let width, height, imgd, canvasPixelData;
+
+            $(document).ready(function() {
+                width = getCookie('image-width');
+                height = getCookie('image-height');
+                imgd = context.createImageData(width, height);
+                canvasPixelData = imgd.data;
+            });
+
+            $('#btn-start-render').click(async function() {
+                for (let i = 0; i < width * height; i++) {
+                    const result = await $.ajax({
+                        url: 'http://127.0.0.1:5000/',
+                        type: 'post',
+                        context: document.body,
+                        success: function(response) {
+                            pixels = getPixels(getCookie('pixels'));
+                            updateCanvas(pixels);
+                        },
+                        error: function(xhr) {
+                            console.log(xhr.status + ' ' + xhr.statusText);
+                        },
+                    });
+                }
+            });
+
+            const getCookie = name => {
+                var value = '; ' + document.cookie;
+                var parts = value.split('; ' + name + '=');
+                if (parts.length == 2)
+                    return parts
+                        .pop()
+                        .split(';')
+                        .shift();
+            };
+
+            // Parse the pixel cookie string into an object
+            const getPixels = pixelString => {
+                return pixelString
+                    .split(' ')
+                    .slice(0, -1)
+                    .map(pixel => pixel.split('+'))
+                    .map(pixel => ({ [pixel[0]]: pixel[1].split('/') }))
+                    .reduce((result, obj) => ({ ...result, ...obj }), {});
+            };
+
+            const updateCanvas = pixelsObject => {
+                for (let [position, rgba] of Object.entries(pixelsObject)) {
+                    position = parseInt(position);
+                    canvasPixelData[position] = rgba[0];
+                    canvasPixelData[position + 1] = rgba[1];
+                    canvasPixelData[position + 2] = rgba[2];
+                    canvasPixelData[position + 3] = 255;
+                }
+                context.putImageData(imgd, 0, 0);
+            };
+        </script>
+    </body>
+</html>

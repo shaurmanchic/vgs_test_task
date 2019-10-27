@@ -17,8 +17,8 @@
                 canvasPixelData = imgd.data;
             });
 
-            $('#btn-start-render').click(function() {
-                getImage();
+            $('#btn-start-render').click(async function() {
+                startLoading();
             });
 
             const getCookie = name => {
@@ -31,30 +31,44 @@
                         .shift();
             };
             
-            const getImage = async function() {
-                for (let i = 0; i < width * height; i++) {
-                        const result = await $.ajax({
-                            url: 'http://127.0.0.1:5000/',
-                            type: 'post',
-                            context: document.body,
-                            success: function(response) {
-                                pixels = getPixels(getCookie('pixels'));
-                                updateCanvas(pixels);
-                            },
-                            error: function(xhr) {
-                                console.log(xhr.status + ' ' + xhr.statusText);
-                            },
-                        });
-                    }
+            function returnRequest() {
+                return Promise.resolve($.ajax({
+                    url: 'http://0.0.0.0:5000/',
+                    type: 'post',
+                    success: function(data, textStatus, xhr) {
+                        updateCanvas(getPixels(xhr.getResponseHeader('pixels')));
+                    },
+                }));
             };
+
+            async function startLoading() {
+                for (let requests = 0; requests < width * height / 10; requests++) {
+                    let promises = [];
+                    
+                    for (i = 0; i < 10; ++i) {
+                        promises.push(
+                            returnRequest()
+                        );
+                    }
+                    
+                    await Promise.all(promises);
+                };
+            }
+
+            // function getImage() {
+            //     $.ajax({
+            //         url: 'http://127.0.0.1:5000/',
+            //         type: 'post',
+            //     });
+            // };
 
             // Parse the pixel cookie string into an object
             const getPixels = pixelString => {
                 return pixelString
-                    .split(' ')
+                    .split(';')
                     .slice(0, -1)
-                    .map(pixel => pixel.split('+'))
-                    .map(pixel => ({ [pixel[0]]: pixel[1].split('/') }))
+                    .map(pixel => pixel.split('='))
+                    .map(pixel => ({ [pixel[0]]: pixel[1].split(',') }))
                     .reduce((result, obj) => ({ ...result, ...obj }), {});
             };
 
